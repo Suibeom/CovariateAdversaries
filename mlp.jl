@@ -7,11 +7,11 @@ using Juno: @progress
 
 # Classify MNIST digits with a simple multi-layer-perceptron
 
-imgs = MNIST.images()[1:3000]
+imgs = MNIST.images()[1:1000]
 # Stack images into one large batch
 X = hcat(float.(reshape.(imgs, :))...) |> gpu
 
-labels = MNIST.labels()[1:3000]
+labels = MNIST.labels()[1:1000]
 # One-hot-encode the labels
 Y = onehotbatch(mod.(labels,2), 0:1) |> gpu
 
@@ -38,9 +38,9 @@ dataset = repeated((X, Y), 2)
 dataseta = repeated((X,Y),2)
 
 opt1 = ADAM(params(a))
-opt2 = ADAM(params(m))
+opt2 = RMSProp(params(m), 0.0001)
 
-diffloss(x, y) = aloss(x,y) - 10*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 1000*loss(x,y)
 function evalcb()
    @show(diffloss(X, Y))
    @show(aloss(X,Y))
@@ -61,9 +61,9 @@ function sample()
   hcat(vcat.(before, after)...)
 end
 
-println("Pretraining adversary")
-Flux.train!(pretrainloss, dataseta, opt2, cb=throttle(advcb,10))
-
+#println("Pretraining adversary")
+#Flux.train!(pretrainloss, dataseta, opt2, cb=throttle(advcb,10))
+#Flux.train!(aloss, dataset,opt2,cb=throttle(advcb,10))
 
 @progress for k in 1:2000
 @info "Epoch $k"
@@ -72,13 +72,13 @@ println("Training autoencoder")
 Flux.train!(diffloss, dataset, opt1, cb = throttle(evalcb,10))
 println("Training adversary")
 A0 = advcb()
-opt2 = ADAM(params(m))
-Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
-while A0 > A #Train until you get back to at least as good as you had!
-Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
-end
-println("Breakpoint reached.")
-for i in 1:10
+
+#Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
+#while A0 > A #Train until you get back to at least as good as you had!
+#Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
+#end
+#println("Breakpoint reached.")
+for i in 1:200
 Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
 end
 
