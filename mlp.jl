@@ -3,7 +3,7 @@ using Flux: onehotbatch, onecold,mse, crossentropy, throttle
 using Base.Iterators: repeated
 using Juno: @progress
 
-using CuArrays
+# using CuArrays
 
 # Classify MNIST digits with a simple multi-layer-perceptron
 
@@ -24,13 +24,20 @@ a = Chain(encoder, decoder)
 aloss(x,y) = mse(a(x), x)
 
 pretrainloss(x,y) = crossentropy(m(x),y)
-
+function nansafemin(a,b)
+  if a == NaN
+    return b
+  elseif b == NaN
+    return a
+  end
+  return min(a,b)
+end
 
 m = Chain(
   Dense(28^2, 32, relu),
   Dense(32, 2),
   softmax) |> gpu
-loss(x, y) = crossentropy(m(a(x)), y)
+loss(x, y) = nansafemin(crossentropy(m(a(x)), y),crossentropy(m(a(x)), -1*y.+1))
 
 accuracy(x, y) = mean(onecold(m(x)) .== onecold(y))
 
