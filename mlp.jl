@@ -3,7 +3,7 @@ using Flux: onehotbatch, onecold,mse, crossentropy, throttle
 using Base.Iterators: repeated
 using Juno: @progress
 
-# using CuArrays
+using CuArrays
 
 # Classify MNIST digits with a simple multi-layer-perceptron
 
