@@ -36,7 +36,7 @@ m = Chain(
   Dense(28^2, 32, relu),
   Dense(32, 2),
   softmax) |> gpu
-clippedloss(x, y) = min(mse(m(a(x)), y),crossentropy(m(a(x)),y))
+clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
 loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
 
 accuracy(x, y) = mean(onecold(m(x)) .== onecold(y))
@@ -47,7 +47,7 @@ dataseta = repeated((X,Y),2)
 opt1 = ADAM(params(a))
 opt2 = ADAM(params(m))
 
-diffloss(x, y) = aloss(x,y) - 1000*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 2*loss(x,y)
 function evalcb()
    @show(diffloss(X, Y))
    @show(aloss(X,Y))
