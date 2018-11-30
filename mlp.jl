@@ -72,7 +72,7 @@ end
 #Flux.train!(aloss, dataset,opt2,cb=throttle(advcb,10))
 
 @progress for k in 1:2000
-diffloss(x, y) = aloss(x,y) - 2*k*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 100*loss(x,y)
 @info "Epoch $k"
 for i = 1:20
 println("Training autoencoder")
