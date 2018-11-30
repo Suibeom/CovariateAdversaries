@@ -1,2 +1,2 @@
 import Pkg
-pkg.add(["Flux","CuArrays","Images","ImageMagick","Juno"])
+Pkg.add(["Flux","CuArrays","Images","ImageMagick","Juno"])
