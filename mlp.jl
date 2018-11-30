@@ -35,9 +35,9 @@ m = Chain(
   Dense(28^2, 32, relu),
   Dense(32, 2),
   softmax) |> gpu
-clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
-loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
-
+#clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
+#loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
+loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1))
 accuracy(x, y) = mean(onecold(m(x)) .== onecold(y))
 
 dataset = repeated((X, Y), 2)
@@ -72,6 +72,7 @@ end
 #Flux.train!(aloss, dataset,opt2,cb=throttle(advcb,10))
 
 @progress for k in 1:2000
+diffloss(x, y) = aloss(x,y) - 0.1*k*loss(x,y)
 @info "Epoch $k"
 for i = 1:20
 println("Training autoencoder")
