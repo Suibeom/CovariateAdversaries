@@ -23,10 +23,9 @@ a = Chain(encoder, decoder)
 aloss(x,y) = mse(a(x), x)
 
 pretrainloss(x,y) = crossentropy(m(x),y)
-function nansafemin(a,b)
-  if a == NaN
-    return b
-  elseif b == NaN
+function nansafemin(a,b) # First should be bounded!!
+  if isnan(b) 
+    println("NaN!")
     return a
   end
   return min(a,b)
@@ -85,8 +84,8 @@ A0 = advcb()
 #Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
 #end
 #println("Breakpoint reached.")
-for i in 1:10
-Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
+for i in 1:100
+Flux.train!(loss, dataseta, opt2)
 end
 
 save("sample"*lpad(string(k),4,string(0))*".png", sample())
