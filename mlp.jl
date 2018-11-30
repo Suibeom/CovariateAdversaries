@@ -14,7 +14,6 @@ X = hcat(float.(reshape.(imgs, :))...) |> gpu
 labels = MNIST.labels()[1:1000]
 # One-hot-encode the labels
 Y = onehotbatch(mod.(labels,2), 0:1) |> gpu
-
 N=32
 encoder = Dense(28^2, N, leakyrelu) |> gpu
 decoder = Dense(N, 28^2, leakyrelu) |> gpu
@@ -37,7 +36,8 @@ m = Chain(
   Dense(28^2, 32, relu),
   Dense(32, 2),
   softmax) |> gpu
-loss(x, y) = nansafemin(crossentropy(m(a(x)), y),crossentropy(m(a(x)), -1*y.+1))
+clippedloss(x, y) = min(mse(m(a(x)), y),crossentropy(m(a(x)),y))
+loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
 
 accuracy(x, y) = mean(onecold(m(x)) .== onecold(y))
 
@@ -45,7 +45,7 @@ dataset = repeated((X, Y), 2)
 dataseta = repeated((X,Y),2)
 
 opt1 = ADAM(params(a))
-opt2 = RMSProp(params(m), 0.0001)
+opt2 = ADAM(params(m))
 
 diffloss(x, y) = aloss(x,y) - 1000*loss(x,y)
 function evalcb()
@@ -85,7 +85,7 @@ A0 = advcb()
 #Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
 #end
 #println("Breakpoint reached.")
-for i in 1:200
+for i in 1:10
 Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
 end
 
