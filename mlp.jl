@@ -38,8 +38,8 @@ m = Chain(
 #clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
 #loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
 loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1))
-accuracy(x, y) = mean(onecold(m(x)) .== onecold(y))
-
+ac(x, y) = mean(onecold(m(a(x))) .== onecold(y))
+accuracy(x,y) = max(ac(x,y), 1-ac(x,y))
 dataset = repeated((X, Y), 2)
 dataseta = repeated((X,Y),2)
 
@@ -48,7 +48,7 @@ opt2 = ADAM(params(m))
 
 diffloss(x, y) = aloss(x,y) - 2*loss(x,y)
 function evalcb()
-   @show(diffloss(X, Y))
+   @show(accuracy(X, Y))
    @show(aloss(X,Y))
 end
 A = 0
@@ -72,7 +72,7 @@ end
 #Flux.train!(aloss, dataset,opt2,cb=throttle(advcb,10))
 
 @progress for k in 1:2000
-diffloss(x, y) = aloss(x,y) - 0.1*k*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 2*k*loss(x,y)
 @info "Epoch $k"
 for i = 1:20
 println("Training autoencoder")
@@ -81,9 +81,9 @@ println("Training adversary")
 A0 = advcb()
 
 #Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
-#while A0 > A #Train until you get back to at least as good as you had!
-#Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
-#end
+while A0 > A #Train until you get back to at least as good as you had!
+Flux.train!(loss, dataseta, opt2, cb=throttle(advcb,10))
+end
 #println("Breakpoint reached.")
 for i in 1:100
 Flux.train!(loss, dataseta, opt2)
