@@ -48,7 +48,7 @@ opt2 = ADAM(params(m))
 
 diffloss(x, y) = aloss(x,y) - 2*loss(x,y)
 function evalcb()
-   @show(diffloss(X, Y))
+   @show(accuracy(X, Y))
    @show(aloss(X,Y))
 end
 A = 0
