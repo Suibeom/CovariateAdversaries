@@ -34,15 +34,12 @@ m = Chain(
   softmax) |> gpu
 #clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
 #loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
-<<<<<<< HEAD
 
-=======
 loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1)) + 0.01*min(mse(m(x), y),mse(m(x), -1*y.+1))
 ac(x, y) = mean(onecold(m(a(x))) .== onecold(y))
 accuracy(x,y) = max(ac(x,y), 1-ac(x,y))
 dataset = repeated((X, Y), 2)
 dataseta = repeated((X,Y),2)
->>>>>>> d5b0eaedce4cf50b4876d930ed994900fa1725ee
 
 opt1 = ADAM(params(a))
 
@@ -83,15 +80,16 @@ dataseta = dataset
 
 
 m = Chain(
-  Dense(28^2, 32, relu),
-  Dense(32, 2),
+  Dense(28^2, N, leakyrelu),
+  Dropout(0.5),
+  Dense(N, 2),
   softmax) |> gpu
 println("Pretraining adversary")
 opt2 = ADAM(params(m))
 for i in 1:100
 Flux.train!(pretrainloss, dataseta, opt2 )
 end
-diffloss(x, y) = aloss(x,y) - 1*(1+(k/20))*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 15*loss(x,y)
 @info "Epoch $k"
 for i = 1:10
 println("Training autoencoder")
@@ -108,5 +106,6 @@ for i in 1:10
 Flux.train!(loss, dataseta, opt2)
 end
 GC.gc(); CuArrays.reclaim()
+save("sample"*lpad(string(k),6,string(0))*".png", sample())
 end
 end
