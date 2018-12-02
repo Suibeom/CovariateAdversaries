@@ -34,7 +34,15 @@ m = Chain(
   softmax) |> gpu
 #clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
 #loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
+<<<<<<< HEAD
 
+=======
+loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1)) + 0.01*min(mse(m(x), y),mse(m(x), -1*y.+1))
+ac(x, y) = mean(onecold(m(a(x))) .== onecold(y))
+accuracy(x,y) = max(ac(x,y), 1-ac(x,y))
+dataset = repeated((X, Y), 2)
+dataseta = repeated((X,Y),2)
+>>>>>>> d5b0eaedce4cf50b4876d930ed994900fa1725ee
 
 opt1 = ADAM(params(a))
 
