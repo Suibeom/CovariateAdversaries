@@ -35,18 +35,18 @@ m = Chain(
 #clippedloss(x, y) = nansafemin(mse(m(a(x)), y),crossentropy(m(a(x)),y))
 #loss(x, y) = min(clippedloss(x, y),clippedloss(x, -1*y.+1))
 
-loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1)) + 0.01*min(mse(m(x), y),mse(m(x), -1*y.+1))
+loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1)) + 0.3*min(mse(m(x), y),mse(m(x), -1*y.+1))
 ac(x, y) = mean(onecold(m(a(x))) .== onecold(y))
 accuracy(x,y) = max(ac(x,y), 1-ac(x,y))
 dataset = repeated((X, Y), 2)
 dataseta = repeated((X,Y),2)
 
-opt1 = ADAM(params(a))
+opt1 = ADAM(params(a),0.00002)
 
-loss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1)) + 0.1*min(mse(m(x), y),mse(m(x), -1*y.+1))
+dloss(x, y) = min(mse(m(a(x)), y),mse(m(a(x)), -1*y.+1))
 ac(x, y) = mean(onecold(m(a(x))) .== onecold(y))
 accuracy(x,y) = max(ac(x,y), 1-ac(x,y))
-diffloss(x, y) = aloss(x,y) - 2*loss(x,y)
+diffloss(x, y) = aloss(x,y) - 2*dloss(x,y)
 function evalcb()
    @show(accuracy(X, Y))
    @show(aloss(X,Y))
@@ -72,24 +72,28 @@ labelss=MNIST.labels()
 
 imgs = deepcopy([imgss[b + (1000*mod(k,60))] for b in 1:1000])
 X1 = hcat(float.(reshape.(imgs, :))...) |> gpu 
+Xx1 = hcat([vec(float.(im)) + 0.75*rand(784) for im in imgs]...)|>gpu
 labels = deepcopy([labelss[b + (1000*mod(k,60))] for b in 1:1000])
 Y1 = onehotbatch(mod.(labels,2), 0:1) |> gpu 
 dataset = repeated((X1,Y1),2)
-dataseta = dataset
+dataseta = repeated((Xx1,Y1),2)
 
 
 
 m = Chain(
   Dense(28^2, N, leakyrelu),
-  Dropout(0.5),
+
   Dense(N, 2),
   softmax) |> gpu
 println("Pretraining adversary")
 opt2 = ADAM(params(m))
-for i in 1:100
-Flux.train!(pretrainloss, dataseta, opt2 )
+for i in 1:10
+Flux.train!(pretrainloss, dataset,opt2)
 end
-diffloss(x, y) = aloss(x,y) - 15*loss(x,y)
+for i in 1:10
+Flux.train!(loss, dataset, opt2 )
+end
+diffloss(x, y) = aloss(x,y) -5*dloss(x,y)
 @info "Epoch $k"
 for i = 1:10
 println("Training autoencoder")
